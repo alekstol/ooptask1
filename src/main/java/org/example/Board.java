@@ -4,17 +4,13 @@ import java.util.List;
 import java.util.Objects;
 public final class Board {
     public static final int SIZE = 8;
-
     private final Piece[][] cells;
-
     public Board() {
         this.cells = new Piece[SIZE][SIZE];
     }
-
     public Piece get(int row, int col) {
         return cells[row][col];
     }
-
     public void set(int row, int col, Piece piece) {
         cells[row][col] = piece;
     }
@@ -22,14 +18,24 @@ public final class Board {
         Objects.requireNonNull(s, "square");
         return cells[s.row()][s.col()];
     }
-
     public void set(Square s, Piece piece) {
         Objects.requireNonNull(s, "square");
         cells[s.row()][s.col()] = piece;
     }
-
     public boolean isEmpty(Square s) {
         return get(s) == null;
+    }
+    public Piece kingOf(Color color) {
+        Objects.requireNonNull(color, "color");
+        for (var row = 0; row < SIZE; row++) {
+            for (var col = 0; col < SIZE; col++) {
+                var p = cells[row][col];
+                if (p != null && p.color() == color && p.type() == PieceType.KING) {
+                    return p;
+                }
+            }
+        }
+        throw new ChessException("На доске нет короля цвета " + color);
     }
     public Board copy() {
         var copy = new Board();
@@ -48,9 +54,7 @@ public final class Board {
         for (var row = 0; row < SIZE; row++) {
             for (var col = 0; col < SIZE; col++) {
                 var p = cells[row][col];
-                if (p != null && p.color() == color) {
-                    result.add(p);
-                }
+                if (p != null && p.color() == color) result.add(p);
             }
         }
         return List.copyOf(result);

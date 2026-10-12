@@ -1,14 +1,16 @@
 package org.example;
+
 import java.util.ArrayList;
 import java.util.List;
 public final class Knight extends Piece {
     private static final int[][] DELTAS = {
-            {1,2},{2,1},{2,-1},{1,-2},{-1,-2},{-2,-1},{-2,1},{-1,2}
+            { 1,  2}, { 2,  1}, { 2, -1}, { 1, -2},
+            {-1, -2}, {-2, -1}, {-2,  1}, {-1,  2}
     };
     public Knight(Color color, Square square) { super(color, square); }
     @Override public PieceType type() { return PieceType.KNIGHT; }
     @Override
-    public List<Move> pseudoLegalMoves(Board board) {
+    public List<Move> pseudoLegalMoves(Board board, Square enPassantTarget) {
         var moves = new ArrayList<Move>();
         for (var d : DELTAS) {
             int r = square.row() + d[0];

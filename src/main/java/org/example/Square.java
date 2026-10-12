@@ -1,7 +1,6 @@
 package org.example;
 import java.util.Objects;
 public record Square(int row, int col) {
-
     public Square {
         if (row < 0 || row >= Board.SIZE || col < 0 || col >= Board.SIZE) {
             throw new ChessException("Клетка вне доски: row=" + row + ", col=" + col);

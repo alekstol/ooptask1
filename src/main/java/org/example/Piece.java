@@ -1,5 +1,4 @@
 package org.example;
-import java.awt.*;
 import java.util.List;
 import java.util.Objects;
 public sealed abstract class Piece
@@ -13,7 +12,7 @@ public sealed abstract class Piece
     public Color color() { return color; }
     public Square square() { return square; }
     public abstract PieceType type();
-    public abstract List<Move> pseudoLegalMoves(Board board);
+    public abstract List<Move> pseudoLegalMoves(Board board, Square enPassantTarget);
     public char symbol() {
         var letter = type().letter();
         return color == Color.WHITE ? letter : Character.toLowerCase(letter);
