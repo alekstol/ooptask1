@@ -3,7 +3,7 @@ public class Position {
     private Board board;
     private Color turnToMove;
     private CastleRights castleRights;
-    private Square enPassantTarget; // может быть null
+    private Square enPassantTarget;
     public Position(Board board, Color turnToMove,
                     CastleRights castleRights, Square enPassantTarget) {
         this.board = board;
@@ -102,20 +102,13 @@ public class Position {
             if (Math.abs(diff) == 2) {
                 int row = move.getFrom().getRow();
                 if (move.getTo().getCol() == 6) {
-                    // короткая
                     Piece rook = nb.get(row, 7);
                     nb.set(row, 5, rook);
                     nb.set(row, 7, null);
-                    if (rook != null) {
-                        rook.setSquare(new Square(row, 5));
-                    }
                 } else {
                     Piece rook = nb.get(row, 0);
                     nb.set(row, 3, rook);
                     nb.set(row, 0, null);
-                    if (rook != null) {
-                        rook.setSquare(new Square(row, 3));
-                    }
                 }
             }
         }
