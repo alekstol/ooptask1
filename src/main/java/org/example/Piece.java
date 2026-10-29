@@ -13,9 +13,6 @@ public abstract class Piece {
     public Square getSquare() {
         return square;
     }
-    public void setSquare(Square square) {
-        this.square = square;
-    }
     public abstract PieceType getType();
     public abstract List<Move> pseudoLegalMoves(Board board, Square enPassantTarget);
     public abstract Piece copyTo(Square target);

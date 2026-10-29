@@ -4,7 +4,7 @@ import java.util.Objects;
 public class Move {
     private Square from;
     private Square to;
-    private PieceType promotion; // null если не превращение
+    private PieceType promotion;
     public Move(Square from, Square to) {
         this.from = from;
         this.to = to;

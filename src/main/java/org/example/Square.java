@@ -16,12 +16,6 @@ public class Square {
     public int getCol() {
         return col;
     }
-    public void setRow(int row) {
-        this.row = row;
-    }
-    public void setCol(int col) {
-        this.col = col;
-    }
     public static Square of(String s) {
         if (s == null || s.length() != 2) {
             throw new ChessException("Некорректная нотация: " + s);

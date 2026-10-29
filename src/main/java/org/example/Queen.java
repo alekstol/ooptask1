@@ -16,7 +16,6 @@ public class Queen extends Piece {
     @Override
     public List<Move> pseudoLegalMoves(Board board, Square ep) {
         List<Move> moves = new ArrayList<Move>();
-
         for (int i = 0; i < D.length; i++) {
             int r = square.getRow() + D[i][0];
             int c = square.getCol() + D[i][1];

@@ -13,7 +13,4 @@ public enum PieceType {
     public char getLetter() {
         return letter;
     }
-    public void setLetter(char letter) {
-        this.letter = letter;
-    }
 }
