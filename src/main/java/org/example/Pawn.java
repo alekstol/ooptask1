@@ -2,22 +2,20 @@ package org.example;
 import java.util.ArrayList;
 import java.util.List;
 public final class Pawn extends Piece {
-    private boolean hasMoved;
     public Pawn(Color color, Square square) { super(color, square); }
     @Override public PieceType type() { return PieceType.PAWN; }
     @Override
-    public List<Move> pseudoLegalMoves(Board board, Square enPassantTarget) {
+    public List<Move> pseudoLegalMoves(Board board, Square ep) {
         var moves = new ArrayList<Move>();
         int dir      = color.direction();
         int startRow = (color == Color.WHITE) ? 1 : 6;
         int promoRow = (color == Color.WHITE) ? 7 : 0;
-        int r = square.row();
-        int c = square.col();
+        int r = square.row(), c = square.col();
+
         var one = new Square(r + dir, c);
         if (board.isEmpty(one)) {
-            addPawnMove(moves, one, promoRow);
-            // вперёд на 2 с начальной позиции
-            if (!hasMoved && r == startRow) {
+            addMove(moves, one, promoRow);
+            if (r == startRow) {
                 var two = new Square(r + 2 * dir, c);
                 if (board.isEmpty(two)) moves.add(new Move(square, two));
             }
@@ -26,34 +24,19 @@ public final class Pawn extends Piece {
             int nc = c + dc;
             if (nc < 0 || nc >= Board.SIZE) continue;
             var to = new Square(r + dir, nc);
-            var target = board.get(to);
-            if (target != null && target.color() != color) {
-                addPawnMove(moves, to, promoRow);
-            }
+            var t = board.get(to);
+            if (t != null && t.color() != color) addMove(moves, to, promoRow);
         }
-        if (enPassantTarget != null
-                && enPassantTarget.row() == r + dir
-                && Math.abs(enPassantTarget.col() - c) == 1) {
-            moves.add(new Move(square, enPassantTarget));
-        }
+        if (ep != null && ep.row() == r + dir && Math.abs(ep.col() - c) == 1)
+            moves.add(new Move(square, ep));
         return List.copyOf(moves);
     }
-    private void addPawnMove(List<Move> moves, Square to, int promoRow) {
+    private void addMove(List<Move> moves, Square to, int promoRow) {
         if (to.row() == promoRow) {
-            moves.add(new Move(square, to, PieceType.QUEEN));
-            moves.add(new Move(square, to, PieceType.ROOK));
-            moves.add(new Move(square, to, PieceType.BISHOP));
-            moves.add(new Move(square, to, PieceType.KNIGHT));
-        } else {
-            moves.add(new Move(square, to));
-        }
+            for (var t : new PieceType[]{PieceType.QUEEN, PieceType.ROOK,
+                    PieceType.BISHOP, PieceType.KNIGHT})
+                moves.add(new Move(square, to, t));
+        } else moves.add(new Move(square, to));
     }
-    public void markMoved() { this.hasMoved = true; }
-    public boolean hasMoved() { return hasMoved; }
-    @Override
-    public Piece copyTo(Square target) {
-        var p = new Pawn(color, target);
-        p.hasMoved = this.hasMoved;
-        return p;
-    }
+    @Override public Piece copyTo(Square target) { return new Pawn(color, target); }
 }

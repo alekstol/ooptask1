@@ -5,70 +5,56 @@ public final class MoveGenerator {
     public List<Move> legalMoves(Position pos) {
         var result = new ArrayList<Move>();
         var board  = pos.board();
-
-        for (var piece : board.piecesOf(pos.turnToMove())) {
-            for (var move : piece.pseudoLegalMoves(board, pos.enPassantTarget())) {
-                if (isSafe(pos, move)) result.add(move);
-            }
-        }
+        for (var piece : board.piecesOf(pos.turnToMove()))
+            for (var m : piece.pseudoLegalMoves(board, pos.enPassantTarget()))
+                if (!isInCheck(pos.withMove(m), pos.turnToMove()))
+                    result.add(m);
         addCastles(pos, result);
         return List.copyOf(result);
     }
     public boolean isInCheck(Position pos, Color color) {
         var king = pos.board().kingOf(color);
-        return isAttacked(pos.board(), king.square(), color.opposite());
-    }
-    private boolean isSafe(Position pos, Move move) {
-        var next = pos.withMove(move);
-        return !isInCheck(next, pos.turnToMove());
-    }
-    private boolean isAttacked(Board board, Square square, Color by) {
-        for (var piece : board.piecesOf(by)) {
-            for (var m : piece.pseudoLegalMoves(board, null)) {
-                if (m.to().equals(square)) return true;
-            }
-        }
+        for (var p : pos.board().piecesOf(color.opposite()))
+            for (var m : p.pseudoLegalMoves(pos.board(), null))
+                if (m.to().equals(king.square())) return true;
         return false;
+    }
+    public void validateMove(Position pos, Move move) {
+        if (!legalMoves(pos).contains(move))
+            throw new ChessException("Недопустимый ход: " + move);
     }
     private void addCastles(Position pos, List<Move> out) {
         var board  = pos.board();
         var color  = pos.turnToMove();
         var rights = pos.castleRights();
-        int row      = (color == Color.WHITE) ? 0 : 7;
-        var kingFrom = new Square(row, 4);
-        var king     = board.get(kingFrom);
-        if (!(king instanceof King k) || k.hasMoved()) return;
+        int row    = (color == Color.WHITE) ? 0 : 7;
+        var from   = new Square(row, 4);
+        if (!(board.get(from) instanceof King)) return;
         if (isInCheck(pos, color)) return;
         if (rights.canCastle(color, true)) {
-            var f1 = new Square(row, 5);
-            var g1 = new Square(row, 6);
-            var h1 = new Square(row, 7);
-            var rook = board.get(h1);
-            if (rook instanceof Rook r && !r.hasMoved()
-                    && board.isEmpty(f1) && board.isEmpty(g1)
-                    && !isAttacked(board, f1, color.opposite())
-                    && !isAttacked(board, g1, color.opposite())) {
-                out.add(new Move(kingFrom, g1));
-            }
+            var f = new Square(row, 5);
+            var g = new Square(row, 6);
+            if (board.get(new Square(row, 7)) instanceof Rook
+                    && board.isEmpty(f) && board.isEmpty(g)
+                    && !attacked(board, f, color.opposite())
+                    && !attacked(board, g, color.opposite()))
+                out.add(new Move(from, g));
         }
         if (rights.canCastle(color, false)) {
-            var d1 = new Square(row, 3);
-            var c1 = new Square(row, 2);
-            var b1 = new Square(row, 1);
-            var a1 = new Square(row, 0);
-            var rook = board.get(a1);
-            if (rook instanceof Rook r && !r.hasMoved()
-                    && board.isEmpty(d1) && board.isEmpty(c1) && board.isEmpty(b1)
-                    && !isAttacked(board, d1, color.opposite())
-                    && !isAttacked(board, c1, color.opposite())) {
-                out.add(new Move(kingFrom, c1));
-            }
+            var d = new Square(row, 3);
+            var c = new Square(row, 2);
+            var b = new Square(row, 1);
+            if (board.get(new Square(row, 0)) instanceof Rook
+                    && board.isEmpty(d) && board.isEmpty(c) && board.isEmpty(b)
+                    && !attacked(board, d, color.opposite())
+                    && !attacked(board, c, color.opposite()))
+                out.add(new Move(from, c));
         }
     }
-    public void validateMove(Position pos, Move move) {
-        var legal = legalMoves(pos);
-        if (!legal.contains(move)) {
-            throw new ChessException("Недопустимый ход: " + move);
-        }
+    private boolean attacked(Board board, Square sq, Color by) {
+        for (var p : board.piecesOf(by))
+            for (var m : p.pseudoLegalMoves(board, null))
+                if (m.to().equals(sq)) return true;
+        return false;
     }
 }

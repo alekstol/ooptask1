@@ -1,24 +1,20 @@
 package org.example;
 import java.util.List;
-import java.util.Objects;
 public sealed abstract class Piece
         permits King, Queen, Rook, Bishop, Knight, Pawn {
     protected final Color color;
-    protected Square square;
+    protected final Square square;
     protected Piece(Color color, Square square) {
-        this.color = Objects.requireNonNull(color, "color");
-        this.square = Objects.requireNonNull(square, "square");
+        this.color  = color;
+        this.square = square;
     }
-    public Color color() { return color; }
+    public Color color()   { return color; }
     public Square square() { return square; }
     public abstract PieceType type();
     public abstract List<Move> pseudoLegalMoves(Board board, Square enPassantTarget);
+    public abstract Piece copyTo(Square target);
     public char symbol() {
-        var letter = type().letter();
+        char letter = type().letter();
         return color == Color.WHITE ? letter : Character.toLowerCase(letter);
     }
-    void setSquare(Square newSquare) {
-        this.square = Objects.requireNonNull(newSquare, "square");
-    }
-    public abstract Piece copyTo(Square target);
 }
