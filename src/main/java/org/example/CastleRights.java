@@ -1,27 +1,66 @@
 package org.example;
-public record CastleRights(boolean whiteKingSide,  boolean whiteQueenSide,
-                           boolean blackKingSide,  boolean blackQueenSide) {
-    public static CastleRights initial() { return new CastleRights(true, true, true, true); }
+public class CastleRights {
+    private boolean whiteKingSide;
+    private boolean whiteQueenSide;
+    private boolean blackKingSide;
+    private boolean blackQueenSide;
+    public CastleRights(boolean whiteKingSide,
+                        boolean whiteQueenSide,
+                        boolean blackKingSide,
+                        boolean blackQueenSide) {
+        this.whiteKingSide = whiteKingSide;
+        this.whiteQueenSide = whiteQueenSide;
+        this.blackKingSide = blackKingSide;
+        this.blackQueenSide = blackQueenSide;
+    }
+    public static CastleRights initial() {
+        return new CastleRights(true, true, true, true);
+    }
     public boolean canCastle(Color color, boolean kingSide) {
-        return switch (color) {
-            case WHITE -> kingSide ? whiteKingSide : whiteQueenSide;
-            case BLACK -> kingSide ? blackKingSide : blackQueenSide;
-        };
+        if (color == Color.WHITE) {
+            if (kingSide) {
+                return whiteKingSide;
+            } else {
+                return whiteQueenSide;
+            }
+        } else {
+            if (kingSide) {
+                return blackKingSide;
+            } else {
+                return blackQueenSide;
+            }
+        }
     }
     public CastleRights revoke(Color color, boolean kingSide) {
-        return switch (color) {
-            case WHITE -> kingSide
-                    ? new CastleRights(false, whiteQueenSide, blackKingSide, blackQueenSide)
-                    : new CastleRights(whiteKingSide, false, blackKingSide, blackQueenSide);
-            case BLACK -> kingSide
-                    ? new CastleRights(whiteKingSide, whiteQueenSide, false, blackQueenSide)
-                    : new CastleRights(whiteKingSide, whiteQueenSide, blackKingSide, false);
-        };
+        boolean wk = whiteKingSide;
+        boolean wq = whiteQueenSide;
+        boolean bk = blackKingSide;
+        boolean bq = blackQueenSide;
+
+        if (color == Color.WHITE) {
+            if (kingSide) {
+                wk = false;
+            } else {
+                wq = false;
+            }
+        } else {
+            if (kingSide) {
+                bk = false;
+            } else {
+                bq = false;
+            }
+        }
+        return new CastleRights(wk, wq, bk, bq);
     }
     public CastleRights revokeAll(Color color) {
-        return switch (color) {
-            case WHITE -> new CastleRights(false, false, blackKingSide, blackQueenSide);
-            case BLACK -> new CastleRights(whiteKingSide, whiteQueenSide, false, false);
-        };
+        if (color == Color.WHITE) {
+            return new CastleRights(false, false, blackKingSide, blackQueenSide);
+        } else {
+            return new CastleRights(whiteKingSide, whiteQueenSide, false, false);
+        }
     }
+    public boolean isWhiteKingSide()  { return whiteKingSide; }
+    public boolean isWhiteQueenSide() { return whiteQueenSide; }
+    public boolean isBlackKingSide()  { return blackKingSide; }
+    public boolean isBlackQueenSide() { return blackQueenSide; }
 }
