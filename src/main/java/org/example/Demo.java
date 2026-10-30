@@ -1,74 +1,127 @@
 package org.example;
+import java.util.List;
+/**
+ * Демонстрация: мат/пат, ничьи (троекратное повторение, 50 ходов),
+ * запись SAN и обратный разбор с воспроизведением всех позиций,
+ * инварианты {@link Position}, контракты equals/hashCode.
+ */
 public class Demo {
     public static void main(String[] args) {
         MoveGenerator gen = new MoveGenerator();
-        Position pos = Position.initial();
-        System.out.println("Начальная позиция:");
-        System.out.println(pos);
-        System.out.println("Легальных ходов белых: " + gen.legalMoves(pos).size());
+        // ===== 1. Начальная позиция и инварианты =====
+        Position start = Position.initial();
+        System.out.println("=== 1. Начальная позиция (32 фигуры) ===");
+        System.out.println(start);
+        System.out.println("Инварианты:");
+        System.out.println("  board != null: " + (start.getBoard() != null));
+        System.out.println("  turnToMove: " + start.getTurnToMove());
+        System.out.println("  enPassantTarget: " + start.getEnPassantTarget());
+        System.out.println("  halfmoveClock: " + start.getHalfmoveClock());
+        System.out.println("  fullmoveNumber: " + start.getFullmoveNumber());
+        System.out.println("  history.size: " + start.getHistory().size());
         System.out.println();
-        pos = pos.withMove(new Move(Square.of("e2"), Square.of("e4")));
-        System.out.println("После e2-e4:");
-        System.out.println(pos);
-        System.out.println("Шах белым? " + gen.isInCheck(pos, Color.WHITE));
-        System.out.println();
-        Board b1 = new Board();
-        b1.set(Square.of("e1"), new King(Color.WHITE, Square.of("e1")));
-        b1.set(Square.of("e8"), new King(Color.BLACK, Square.of("e8")));
-        b1.set(Square.of("e5"), new Queen(Color.BLACK, Square.of("e5")));
-        Position p1 = new Position(b1, Color.WHITE, CastleRights.initial(), null);
-        System.out.println("Шах (Qe5)? " + gen.isInCheck(p1, Color.WHITE));
-        System.out.println();
-        Board b2 = new Board();
-        b2.set(Square.of("e1"), new King(Color.WHITE, Square.of("e1")));
-        b2.set(Square.of("h1"), new Rook(Color.WHITE, Square.of("h1")));
-        b2.set(Square.of("e8"), new King(Color.BLACK, Square.of("e8")));
-        Position p2 = new Position(b2, Color.WHITE, CastleRights.initial(), null);
-        System.out.println("Рокировки белых:");
-        java.util.List<Move> moves2 = gen.legalMoves(p2);
-        for (int i = 0; i < moves2.size(); i++) {
-            Move m = moves2.get(i);
-            if (m.getFrom().equals(Square.of("e1"))
-                    && Math.abs(m.getTo().getCol() - 4) == 2) {
-                System.out.println("  " + m);
-            }
+        // ===== 2. Мат: дурацкий мат =====
+        System.out.println("=== 2. Мат (дурацкий мат) ===");
+        Position fool = start;
+        for (Move m : Notation.parse(fool, "1. f3 e5 2. g4 Qh4#", gen)) {
+            fool = fool.withMove(m);
         }
+        System.out.println(fool);
+        System.out.println("isCheckmate: " + gen.isCheckmate(fool));
+        System.out.println("isStalemate: " + gen.isStalemate(fool));
+        System.out.println("result: " + gen.result(fool));
         System.out.println();
-        Board b3 = new Board();
-        b3.set(Square.of("e5"), new Pawn(Color.WHITE, Square.of("e5")));
-        b3.set(Square.of("d5"), new Pawn(Color.BLACK, Square.of("d5")));
-        b3.set(Square.of("e1"), new King(Color.WHITE, Square.of("e1")));
-        b3.set(Square.of("e8"), new King(Color.BLACK, Square.of("e8")));
-        Position p3 = new Position(b3, Color.WHITE, CastleRights.initial(), Square.of("d6"));
-        System.out.println("Взятие на проходе:");
-        java.util.List<Move> moves3 = gen.legalMoves(p3);
-        for (int i = 0; i < moves3.size(); i++) {
-            Move m = moves3.get(i);
-            if (m.getFrom().equals(Square.of("e5")) && m.getTo().equals(Square.of("d6"))) {
-                System.out.println("  " + m);
-            }
-        }
+        // ===== 3. Пат =====
+        System.out.println("=== 3. Пат ===");
+        Board sb = new Board();
+        sb.set(Square.of("a8"), new King(Color.BLACK, Square.of("a8")));
+        sb.set(Square.of("c6"), new King(Color.WHITE, Square.of("c6")));
+        sb.set(Square.of("b6"), new Queen(Color.WHITE, Square.of("b6")));
+        Position sp = new Position(sb, Color.BLACK, CastleRights.initial(), null);
+        System.out.println(sp);
+        System.out.println("isInCheck(black): " + gen.isInCheck(sp, Color.BLACK));
+        System.out.println("isStalemate: " + gen.isStalemate(sp));
+        System.out.println("result: " + gen.result(sp));
         System.out.println();
-        Board b4 = new Board();
-        b4.set(Square.of("e7"), new Pawn(Color.WHITE, Square.of("e7")));
-        b4.set(Square.of("a1"), new King(Color.WHITE, Square.of("a1")));
-        b4.set(Square.of("h8"), new King(Color.BLACK, Square.of("h8")));
-        System.out.println("Превращение e7:");
-        Piece pawn = b4.get(Square.of("e7"));
-        java.util.List<Move> promos = pawn.pseudoLegalMoves(b4, null);
-        for (int i = 0; i < promos.size(); i++) {
-            Move m = promos.get(i);
-            if (m.isPromotion()) {
-                System.out.println("  " + m);
-            }
-        }
+        // ===== 4. Ничья по 50 ходам =====
+        System.out.println("=== 4. Правило 50 ходов ===");
+        Position fifty = start;
+        String shuffle =
+                "Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 "
+                        + "Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 "
+                        + "Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 "
+                        + "Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 "
+                        + "Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 "
+                        + "Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 "
+                        + "Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 "
+                        + "Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 "
+                        + "Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 "
+                        + "Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 "
+                        + "Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 "
+                        + "Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8 "
+                        + "Nf3 Nf6 Ng1 Ng8";
+        for (Move m : Notation.parse(fifty, shuffle, gen)) fifty = fifty.withMove(m);
+        System.out.println("halfmoveClock: " + fifty.getHalfmoveClock());
+        System.out.println("isFiftyMoveRule: " + gen.isFiftyMoveRule(fifty));
+        System.out.println("result: " + gen.result(fifty));
         System.out.println();
-        try {
-            gen.validateMove(Position.initial(),
-                    new Move(Square.of("e2"), Square.of("e5")));
-            System.out.println("ОШИБКА: ход должен быть запрещён");
-        } catch (ChessException e) {
-            System.out.println("Поймано: " + e.getMessage());
+        // ===== 5. Троекратное повторение =====
+        System.out.println("=== 5. Троекратное повторение ===");
+        Position rep = start;
+        for (Move m : Notation.parse(rep, "Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8", gen)) {
+            rep = rep.withMove(m);
         }
+        System.out.println("history.size: " + rep.getHistory().size());
+        System.out.println("isThreefoldRepetition: " + gen.isThreefoldRepetition(rep));
+        System.out.println("result: " + gen.result(rep));
+        System.out.println();
+        // ===== 6. Запись SAN =====
+        System.out.println("=== 6. Запись SAN ===");
+        String san = "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6";
+        Position game = start;
+        List<Move> moves = Notation.parse(game, san, gen);
+        StringBuilder rec = new StringBuilder();
+        for (int i = 0; i < moves.size(); i++) {
+            Move m = moves.get(i);
+            String s = Notation.toSan(game, m, game.withMove(m), gen);
+            if (i % 2 == 0) rec.append((i / 2 + 1)).append(". ");
+            rec.append(s).append(' ');
+            game = game.withMove(m);
+        }
+        System.out.println("Исходная SAN:  " + san);
+        System.out.println("Записано SAN:  " + rec.toString().trim());
+        System.out.println("Совпадает:     " + san.equals(rec.toString().trim()));
+        System.out.println();
+        // ===== 7. Replay всех позиций =====
+        System.out.println("=== 7. Replay всех позиций ===");
+        List<Position> positions = Notation.replay(start, san, gen);
+        System.out.println("Позиций (включая начальную): " + positions.size());
+        for (int i = 0; i < positions.size(); i++) {
+            Position p = positions.get(i);
+            System.out.println("--- #" + i + " (ход: " + p.getTurnToMove()
+                    + ", halfmove=" + p.getHalfmoveClock()
+                    + ", fullmove=" + p.getFullmoveNumber() + ") ---");
+            System.out.println(p);
+        }
+        // ===== 8. Контракты equals/hashCode =====
+        System.out.println("=== 8. Контракты equals/hashCode ===");
+        Move m1 = new Move(Square.of("e2"), Square.of("e4"));
+        Move m2 = new Move(Square.of("e2"), Square.of("e4"));
+        System.out.println("Move equals: " + m1.equals(m2)
+                + ", hash equal: " + (m1.hashCode() == m2.hashCode()));
+        System.out.println("PositionKey(start) == PositionKey(start): "
+                + PositionKey.of(start).equals(PositionKey.of(Position.initial())));
+        System.out.println();
+        // ===== 9. Иммутабельность Position =====
+        System.out.println("=== 9. Иммутабельность Position ===");
+        Position afterE4 = start.withMove(m1);
+        System.out.println("start.turnToMove: " + start.getTurnToMove());
+        System.out.println("afterE4.turnToMove: " + afterE4.getTurnToMove());
+        System.out.println("start.history.size: " + start.getHistory().size());
+        System.out.println("afterE4.history.size: " + afterE4.getHistory().size());
+        System.out.println("start.board == afterE4.board: "
+                + (start.getBoard() == afterE4.getBoard()));
+        System.out.println();
+        System.out.println("=== Готово ===");
     }
 }
